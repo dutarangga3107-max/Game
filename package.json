@@ -1,0 +1,23 @@
+{
+  "name": "tower-defense",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Tower defense game built with Phaser 3 + TypeScript",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.1.0",
+    "vitest": "^3.2.7"
+  }
+}
