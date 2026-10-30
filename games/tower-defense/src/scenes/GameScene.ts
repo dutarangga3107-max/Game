@@ -22,8 +22,8 @@ import { Enemy } from '../entities/Enemy';
 import { Projectile } from '../entities/Projectile';
 import { Tower } from '../entities/Tower';
 import { TARGET_MODES, type EnemyKind, type Point, type TowerInfo, type TowerKind } from '../types';
+import { scores } from '../scores';
 
-const BEST_WAVE_KEY = 'td.bestWave';
 const BULLET_SPEED = 560;
 const SHELL_SPEED = 330;
 const HIT_RADIUS = 11;
@@ -745,12 +745,7 @@ export class GameScene extends Phaser.Scene implements Combat {
     this.over = true;
 
     const wave = this.waves.currentWave;
-    const best = Math.max(wave, Number(localStorage.getItem(BEST_WAVE_KEY) ?? 0) || 0);
-    try {
-      localStorage.setItem(BEST_WAVE_KEY, String(best));
-    } catch {
-      // localStorage bisa diblokir (private mode); skor sesi tetap jalan.
-    }
+    const best = scores.submit('wave', wave);
 
     const payload: GameOverPayload = { victory, wave, totalWaves: this.waves.totalWaves, bestWave: best };
     EventBus.emit(Ev.GameOver, payload);

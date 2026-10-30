@@ -1,7 +1,21 @@
 node_modules/
 dist/
 dist-ssr/
+dist-site/
 *.local
 .DS_Store
 .vite/
 *.tsbuildinfo
+
+# Proyek native Capacitor digenerate ulang tiap build, tidak pernah di-commit.
+games/*/android/
+games/*/ios/
+
+# Rahasia signing — jangan pernah masuk repo.
+*.keystore
+*.jks
+keystore.properties
+google-play-service-account.json
+
+games/*/assets/
+dist-android/

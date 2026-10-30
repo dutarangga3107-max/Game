@@ -1,23 +1,29 @@
 {
-  "name": "tower-defense",
+  "name": "game-monorepo",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.0.0",
   "type": "module",
-  "description": "Tower defense game built with Phaser 3 + TypeScript",
+  "description": "Monorepo berisi beberapa game, masing-masing dirilis sebagai APK sendiri",
+  "workspaces": [
+    "packages/*",
+    "games/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "dev": "npm run dev --workspace",
+    "build": "npm run build --workspaces --if-present",
     "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "dependencies": {
-    "phaser": "^3.90.0"
+    "test:watch": "vitest",
+    "typecheck": "tsc --build --force",
+    "site": "node scripts/build-site.mjs",
+    "icon": "node scripts/make-icon.mjs",
+    "games": "node scripts/list-games.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
     "vite": "^7.1.0",
-    "vitest": "^3.2.7"
+    "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=20.19"
   }
 }

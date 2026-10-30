@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { COLORS, FONT, FONT_MONO, GAME_H, GAME_W } from '../config/constants';
 import { LEVEL } from '../config/level';
 import { TOWERS, TOWER_ORDER } from '../config/towers';
+import { scores } from '../scores';
 import { Button } from '../ui/Button';
 
 export class MenuScene extends Phaser.Scene {
@@ -32,7 +33,7 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    const best = Number(localStorage.getItem('td.bestWave') ?? 0) || 0;
+    const best = scores.best('wave');
     if (best > 0) {
       this.add
         .text(cx, 230, `Rekor: wave ${best}`, { fontFamily: FONT_MONO, fontSize: '13px', color: rgba(COLORS.gold) })

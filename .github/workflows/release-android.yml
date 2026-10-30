@@ -1,0 +1,133 @@
+name: Rilis Android
+
+# Tag menentukan game mana yang dirilis, misalnya: tower-defense-v0.1.0
+on:
+  push:
+    tags: ['*-v*']
+  workflow_dispatch:
+    inputs:
+      game:
+        description: 'ID game yang dirilis (contoh: tower-defense)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build & rilis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Tentukan game dan versi
+        id: target
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            GAME="${{ inputs.game }}"
+            VERSION=""
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+            GAME="${TAG%-v*}"
+            VERSION="${TAG##*-v}"
+          fi
+          echo "game=$GAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Game: $GAME  Versi tag: ${VERSION:-(dari package.json)}"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci
+
+      - name: Pastikan versi tag cocok dengan package.json
+        if: steps.target.outputs.version != ''
+        run: |
+          set -euo pipefail
+          PKG_VERSION=$(node -p "require('./games/${{ steps.target.outputs.game }}/package.json').version")
+          TAG_VERSION="${{ steps.target.outputs.version }}"
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Tag menyebut v$TAG_VERSION tapi package.json berisi $PKG_VERSION. Samakan dulu sebelum merilis."
+            exit 1
+          fi
+          echo "Versi cocok: $PKG_VERSION"
+
+      - name: Build APK + AAB bertanda tangan
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: node scripts/build-android.mjs "${{ steps.target.outputs.game }}" --release
+
+      - name: Buat GitHub Release
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist-android/*.apk
+            dist-android/*.aab
+          generate_release_notes: true
+          body: |
+            APK bisa langsung di-sideload. AAB adalah format yang diunggah ke Google Play Console.
+
+      - name: Simpan artefak (jalur manual)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.target.outputs.game }}-release
+          path: |
+            dist-android/*.apk
+            dist-android/*.aab
+
+  itch:
+    name: Publikasi web ke itch.io
+    runs-on: ubuntu-latest
+    # Dilewati diam-diam sampai ITCH_USER diisi di repository variables,
+    # jadi rilis Android tidak ikut gagal kalau itch.io belum disiapkan.
+    if: github.event_name == 'push' && vars.ITCH_USER != ''
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Tentukan game dan versi
+        id: target
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "game=${TAG%-v*}" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG##*-v}" >> "$GITHUB_OUTPUT"
+
+      - run: npm run site
+
+      - name: Unggah build web lewat butler
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+        run: |
+          set -euo pipefail
+          curl -sL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip -q butler.zip -d "$HOME/butler"
+          chmod +x "$HOME/butler/butler"
+          "$HOME/butler/butler" push \
+            "dist-site/${{ steps.target.outputs.game }}" \
+            "${{ vars.ITCH_USER }}/${{ steps.target.outputs.game }}:html5" \
+            --userversion "${{ steps.target.outputs.version }}"
