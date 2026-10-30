@@ -67,6 +67,12 @@ jobs:
           java-version: 21
 
       - uses: android-actions/setup-android@v3
+        with:
+          # Runner ubuntu sudah membawa SDK lengkap; action ini hanya dipakai
+          # untuk menyetujui lisensi. Daftar paket dikosongkan karena
+          # default-nya memasang 'tools', paket usang yang sudah dihapus
+          # Google dari repositori sehingga sdkmanager keluar dengan error.
+          packages: ''
 
       - uses: gradle/actions/setup-gradle@v4
 
