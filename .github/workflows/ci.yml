@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main, Rangga]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, test, build
+    runs-on: ubuntu-latest
+    outputs:
+      games: ${{ steps.discover.outputs.games }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build semua game
+        run: npm run site
+
+      - name: Temukan daftar game
+        id: discover
+        run: echo "games=$(node scripts/list-games.mjs --json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: dist-site/
+          retention-days: 7
+
+  android:
+    name: "APK debug: ${{ matrix.game.id }}"
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ${{ fromJson(needs.check.outputs.games) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+        with:
+          # Runner ubuntu sudah membawa SDK lengkap; action ini hanya dipakai
+          # untuk menyetujui lisensi. Daftar paket dikosongkan karena
+          # default-nya memasang 'tools', paket usang yang sudah dihapus
+          # Google dari repositori sehingga sdkmanager keluar dengan error.
+          packages: ''
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci
+
+      # Membuktikan seluruh rantai web -> Capacitor -> Gradle benar-benar
+      # menghasilkan APK, tanpa perlu menyentuh secret signing sama sekali.
+      - name: Build APK debug
+        run: node scripts/build-android.mjs ${{ matrix.game.id }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.game.id }}-debug-apk
+          path: dist-android/*.apk
+          retention-days: 14

@@ -1,0 +1,30 @@
+{
+  "name": "@game/tower-defense",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Tower defense berbasis grid, Phaser 3",
+  "game": {
+    "id": "tower-defense",
+    "title": "Tower Defense",
+    "blurb": "Tahan 20 wave dengan 4 jenis tower. Musuh udara punya rute terbangnya sendiri.",
+    "appId": "io.github.dutarangga.towerdefense",
+    "accent": "#55c8f0",
+    "background": "#0b0f14"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --build"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@game/core": "*",
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.0"
+  }
+}

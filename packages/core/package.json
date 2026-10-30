@@ -1,0 +1,15 @@
+{
+  "name": "@game/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Utilitas yang dipakai bersama oleh semua game di monorepo ini",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build"
+  }
+}
